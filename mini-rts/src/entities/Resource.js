@@ -45,11 +45,49 @@ export default class Resource {
   removeAmount(amount) {
     this.amount = Math.max(0, this.amount - amount);
     
+    // 添加资源被挖掘的视觉效果
+    this.showHarvestEffect();
+    
     // 如果资源耗尽，更新显示
     if (this.amount <= 0) {
       this.resourceText.setText('0');
       this.resourceBar.width = 0;
       this.sprite.setAlpha(0.3);
+    }
+  }
+  
+  // 添加资源被挖掘的视觉效果
+  showHarvestEffect() {
+    // 闪烁效果
+    this.scene.tweens.add({
+      targets: this.sprite,
+      alpha: 0.7,
+      duration: 200,
+      yoyo: true,
+      ease: 'Sine.easeInOut',
+      onComplete: () => {
+        this.sprite.setAlpha(1);
+      }
+    });
+    
+    // 粒子效果 (如果可能)
+    try {
+      const particles = this.scene.add.particles(this.x, this.y, 'mine', {
+        speed: 50,
+        scale: { start: 0.2, end: 0 },
+        alpha: { start: 0.5, end: 0 },
+        lifespan: 500,
+        blendMode: 'ADD',
+        quantity: 3
+      });
+      
+      // 短暂显示后销毁
+      this.scene.time.delayedCall(500, () => {
+        particles.destroy();
+      });
+    } catch (error) {
+      // 如果粒子效果失败，忽略错误
+      console.log('粒子效果创建失败，跳过');
     }
   }
   

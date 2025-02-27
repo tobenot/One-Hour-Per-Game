@@ -43,6 +43,25 @@ export default class Boot extends Phaser.Scene {
     
     // 创建游戏资源
     this.createGameAssets();
+    
+    // 检查纹理是否已成功创建
+    if (this.textures.exists('grass')) {
+      this.logDebug('grass纹理创建成功');
+    } else {
+      this.logDebug('警告：grass纹理创建失败', 'warning');
+    }
+    
+    if (this.textures.exists('tree')) {
+      this.logDebug('tree纹理创建成功');
+    } else {
+      this.logDebug('警告：tree纹理创建失败', 'warning');
+    }
+    
+    if (this.textures.exists('rock')) {
+      this.logDebug('rock纹理创建成功');
+    } else {
+      this.logDebug('警告：rock纹理创建失败', 'warning');
+    }
   }
   
   createLoadingBar() {
@@ -92,18 +111,68 @@ export default class Boot extends Phaser.Scene {
     resourceIconGraphics.strokeCircle(20, 20, 20);
     resourceIconGraphics.generateTexture('resource-icon', 40, 40);
     
-    // 创建地面
-    const grassGraphics = this.make.graphics();
-    grassGraphics.fillStyle(0x228833, 1);
-    grassGraphics.fillRect(0, 0, 64, 64);
-    // 添加一些纹理
-    grassGraphics.fillStyle(0x339944, 1);
-    for (let i = 0; i < 10; i++) {
-      const x = Math.random() * 64;
-      const y = Math.random() * 64;
-      grassGraphics.fillRect(x, y, 4, 4);
+    // 创建地面 - 增强纹理和可见度
+    try {
+      this.logDebug('开始创建grass纹理');
+      const grassGraphics = this.make.graphics();
+      // 基础背景色
+      grassGraphics.fillStyle(0x3fa150, 1); // 更亮的绿色
+      grassGraphics.fillRect(0, 0, 64, 64);
+      
+      // 添加网格线
+      grassGraphics.lineStyle(1, 0x338844, 0.3);
+      for (let i = 0; i <= 64; i += 16) {
+        grassGraphics.moveTo(0, i);
+        grassGraphics.lineTo(64, i);
+        grassGraphics.moveTo(i, 0);
+        grassGraphics.lineTo(i, 64);
+      }
+      grassGraphics.strokePath();
+      
+      // 添加随机的草块
+      grassGraphics.fillStyle(0x2d8540, 1);
+      for (let i = 0; i < 15; i++) {
+        const x = Math.random() * 60;
+        const y = Math.random() * 60;
+        const size = 2 + Math.random() * 4;
+        grassGraphics.fillRect(x, y, size, size);
+      }
+      
+      // 添加亮色点缀
+      grassGraphics.fillStyle(0x4db868, 1);
+      for (let i = 0; i < 10; i++) {
+        const x = Math.random() * 60;
+        const y = Math.random() * 60;
+        const size = 1 + Math.random() * 3;
+        grassGraphics.fillRect(x, y, size, size);
+      }
+      
+      // 确保纹理刷新并生成
+      grassGraphics.generateTexture('grass', 64, 64);
+      this.logDebug('grass纹理生成完成');
+      
+      // 通过尝试加载验证纹理是否存在
+      const testSprite = this.add.image(0, 0, 'grass');
+      if (testSprite && testSprite.texture) {
+        this.logDebug('grass纹理验证成功');
+        testSprite.destroy(); // 清理测试精灵
+      } else {
+        throw new Error('grass纹理验证失败');
+      }
+    } catch (error) {
+      this.logDebug(`grass纹理创建失败: ${error.message}`, 'error');
+      
+      // 尝试创建一个非常简单的备选纹理
+      try {
+        const simpleGrassGraphics = this.make.graphics();
+        simpleGrassGraphics.fillStyle(0x3fa150, 1);
+        simpleGrassGraphics.fillRect(0, 0, 64, 64);
+        simpleGrassGraphics.generateTexture('grass', 64, 64);
+        this.logDebug('创建了简化的草地纹理作为备选');
+      } catch (backupError) {
+        this.logDebug(`备选grass纹理创建也失败了: ${backupError.message}`, 'error');
+      }
     }
-    grassGraphics.generateTexture('grass', 64, 64);
     
     // 创建树
     const treeGraphics = this.make.graphics();
@@ -131,14 +200,38 @@ export default class Boot extends Phaser.Scene {
     baseGraphics.fillRect(24, 24, 16, 16);
     baseGraphics.generateTexture('base', 64, 64);
     
-    // 创建兵营
+    // 创建兵营 - 增强可见度
     const barracksGraphics = this.make.graphics();
+    
+    // 主体
     barracksGraphics.fillStyle(0xaa6600, 1);
     barracksGraphics.fillRect(0, 0, 64, 48);
+    
+    // 屋顶
     barracksGraphics.fillStyle(0x994400, 1);
     barracksGraphics.fillTriangle(0, 0, 64, 0, 32, -16);
+    
+    // 轮廓
     barracksGraphics.lineStyle(2, 0xcc8800, 1);
     barracksGraphics.strokeRect(0, 0, 64, 48);
+    barracksGraphics.lineStyle(2, 0xcc8800, 1);
+    barracksGraphics.moveTo(0, 0);
+    barracksGraphics.lineTo(32, -16);
+    barracksGraphics.lineTo(64, 0);
+    
+    // 窗户和门
+    barracksGraphics.fillStyle(0x4488ff, 1);
+    barracksGraphics.fillRect(10, 15, 12, 12); // 窗户
+    barracksGraphics.fillRect(42, 15, 12, 12); // 窗户
+    barracksGraphics.fillStyle(0x996633, 1);
+    barracksGraphics.fillRect(27, 24, 10, 24); // 门
+    
+    // 窗户和门的轮廓
+    barracksGraphics.lineStyle(1, 0xddbb99, 1);
+    barracksGraphics.strokeRect(10, 15, 12, 12);
+    barracksGraphics.strokeRect(42, 15, 12, 12);
+    barracksGraphics.strokeRect(27, 24, 10, 24);
+    
     barracksGraphics.generateTexture('barracks', 64, 48);
     
     // 创建矿山资源

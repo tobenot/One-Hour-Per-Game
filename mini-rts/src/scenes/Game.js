@@ -10,7 +10,7 @@ export default class Game extends Phaser.Scene {
     this.logDebug('Game场景已构造');
     
     // 游戏状态
-    this.resources = 50; // 初始资源
+    this.resources = 100; // 初始资源从50增加到100
     this.selectedEntities = []; // 当前选中的实体
     this.playerUnits = []; // 玩家单位
     this.enemyUnits = []; // 敌人单位
@@ -22,7 +22,7 @@ export default class Game extends Phaser.Scene {
     this.buildingToPlace = null;
 
     // 输入模式
-    this.inputMode = 'select'; // 'select', 'move', 'attack', 'build'
+    this.inputMode = 'select'; // 'select', 'move', 'attack', 'build', 'camera'
   }
 
   // 调试日志辅助函数
@@ -183,23 +183,67 @@ export default class Game extends Phaser.Scene {
   }
   
   createMap() {
-    // 创建简单的地形
-    this.map = this.add.tileSprite(0, 0, 2000, 2000, 'grass');
-    this.map.setOrigin(0, 0);
-    
-    // 添加一些随机的装饰物(树木、岩石等)
-    for (let i = 0; i < 50; i++) {
-      const x = Phaser.Math.Between(50, 1950);
-      const y = Phaser.Math.Between(50, 1950);
+    // 创建简单的地形 - 使用图像而不是tileSprite
+    try {
+      this.logDebug("开始创建地图");
       
-      // 避免在基地附近生成障碍物
-      if ((x < 300 && y < 300) || (x > 1700 && y > 1700)) {
-        continue;
+      // 检查grass纹理是否存在
+      if (this.textures.exists('grass')) {
+        this.logDebug("grass纹理存在");
+      } else {
+        this.logDebug("错误：grass纹理不存在！", "error");
+        // 尝试重新创建grass纹理
+        const grassGraphics = this.make.graphics();
+        grassGraphics.fillStyle(0x3fa150, 1);
+        grassGraphics.fillRect(0, 0, 64, 64);
+        grassGraphics.generateTexture('grass', 64, 64);
+        this.logDebug("已重新创建grass纹理");
       }
       
-      const decorType = Math.random() > 0.5 ? 'tree' : 'rock';
-      const decoration = this.physics.add.image(x, y, decorType);
-      decoration.setImmovable(true);
+      // 创建多个草地图块以覆盖整个地图
+      this.mapTiles = [];
+      const tileSize = 64; // 草地纹理的尺寸
+      const mapWidth = 2000;
+      const mapHeight = 2000;
+      
+      for (let x = 0; x < mapWidth; x += tileSize) {
+        for (let y = 0; y < mapHeight; y += tileSize) {
+          const tile = this.add.image(x, y, 'grass');
+          tile.setOrigin(0, 0);
+          this.mapTiles.push(tile);
+        }
+      }
+      
+      this.logDebug(`创建了 ${this.mapTiles.length} 个地图瓦片`);
+      
+      // 添加一些随机的装饰物(树木、岩石等)
+      for (let i = 0; i < 50; i++) {
+        const x = Phaser.Math.Between(50, 1950);
+        const y = Phaser.Math.Between(50, 1950);
+        
+        // 避免在基地附近生成障碍物
+        if ((x < 300 && y < 300) || (x > 1700 && y > 1700)) {
+          continue;
+        }
+        
+        const decorType = Math.random() > 0.5 ? 'tree' : 'rock';
+        const decoration = this.physics.add.image(x, y, decorType);
+        decoration.setImmovable(true);
+      }
+
+      this.logDebug("地图创建完成");
+    } catch (error) {
+      this.logDebug(`地图创建失败: ${error.message}`);
+      console.error("地图创建错误:", error);
+      
+      // 创建备用地图
+      try {
+        const backupMap = this.add.rectangle(0, 0, 2000, 2000, 0x3fa150);
+        backupMap.setOrigin(0, 0);
+        this.logDebug("创建了备用纯色地图");
+      } catch (backupError) {
+        this.logDebug(`备用地图创建也失败了: ${backupError.message}`);
+      }
     }
   }
   
@@ -238,7 +282,7 @@ export default class Game extends Phaser.Scene {
         damage: 5,
         attackRange: 20,
         attackSpeed: 1,
-        harvestAmount: 10
+        harvestAmount: 20
       });
       
       this.playerUnits.push(worker);
@@ -264,7 +308,7 @@ export default class Game extends Phaser.Scene {
         damage: 5,
         attackRange: 20,
         attackSpeed: 1,
-        harvestAmount: 10
+        harvestAmount: 20
       });
       
       this.enemyUnits.push(worker);
@@ -297,7 +341,13 @@ export default class Game extends Phaser.Scene {
     this.uiCamera.transparent = true;
     this.uiCamera.scrollX = 0;
     this.uiCamera.scrollY = 0;
-    this.uiCamera.ignore(this.map);
+    
+    // 让UI相机忽略地图元素
+    if (this.mapTiles && this.mapTiles.length > 0) {
+      for (const tile of this.mapTiles) {
+        this.uiCamera.ignore(tile);
+      }
+    }
     
     // 确保所有UI元素使用UI相机渲染
     if (this.uiPanel) this.uiCamera.ignore(this.uiPanel);
@@ -309,24 +359,12 @@ export default class Game extends Phaser.Scene {
     this.selectionRect = this.add.rectangle(0, 0, 0, 0, 0x0000ff, 0.3);
     this.selectionRect.setVisible(false);
     this.selectionRect.setOrigin(0, 0);
+    this.selectionRect.setDepth(800); // 确保框选矩形在所有单位上方显示
     
     // 注册指针事件
     this.input.on('pointerdown', this.handlePointerDown, this);
     this.input.on('pointerup', this.handlePointerUp, this);
     this.input.on('pointermove', this.handlePointerMove, this);
-    
-    // 添加触摸滑动支持 - 用于移动相机
-    this.input.on('pointermove', pointer => {
-      if (pointer.isDown && pointer.downY < this.cameras.main.height - this.controlPanelHeight) {
-        // 仅在游戏区域内滑动才移动相机
-        if (pointer.prevPosition && !this.buildMode) {
-          const dx = pointer.position.x - pointer.prevPosition.x;
-          const dy = pointer.position.y - pointer.prevPosition.y;
-          this.cameras.main.scrollX -= dx;
-          this.cameras.main.scrollY -= dy;
-        }
-      }
-    });
     
     // 键盘控制
     this.cursors = this.input.keyboard.createCursorKeys();
@@ -373,6 +411,9 @@ export default class Game extends Phaser.Scene {
       case 'build':
         this.input.setDefaultCursor('cell');
         break;
+      case 'camera':
+        this.input.setDefaultCursor('grab');
+        break;
     }
     
     // 显示提示消息
@@ -380,12 +421,14 @@ export default class Game extends Phaser.Scene {
       'select': '选择模式：点击选择单位或建筑',
       'move': '移动模式：点击地图移动选中的单位',
       'attack': '攻击模式：点击敌人攻击',
-      'build': '建造模式：选择位置放置建筑'
+      'build': '建造模式：选择位置放置建筑',
+      'camera': '相机移动模式：拖动屏幕移动视角'
     };
     
     // 更新UI按钮高亮状态
     if (this.controlButtons) {
-      const modeIndex = ['select', 'move', 'attack', 'build'].indexOf(mode);
+      // 获取所有操作按钮的索引
+      const modeIndex = ['select', 'move', 'attack', 'build', 'camera'].indexOf(mode);
       if (modeIndex >= 0 && modeIndex < this.controlButtons.length) {
         // 重置所有按钮颜色
         this.controlButtons.forEach(btn => {
@@ -450,6 +493,13 @@ export default class Game extends Phaser.Scene {
       return;
     }
     
+    // 如果在相机模式，则记录拖动起点
+    if (this.inputMode === 'camera') {
+      this.cameraStartDrag = { x: pointer.x, y: pointer.y };
+      this.input.setDefaultCursor('grabbing');
+      return;
+    }
+    
     // 如果在建造模式，则放置建筑
     if (this.buildMode && this.buildingToPlace) {
       this.placeBuilding(pointer.worldX, pointer.worldY);
@@ -492,15 +542,31 @@ export default class Game extends Phaser.Scene {
   }
   
   handlePointerMove(pointer) {
+    // 相机模式下的拖动处理
+    if (this.inputMode === 'camera' && this.cameraStartDrag && pointer.isDown) {
+      const dx = pointer.x - this.cameraStartDrag.x;
+      const dy = pointer.y - this.cameraStartDrag.y;
+      
+      // 移动相机（反向移动，使得看起来像是拖动地图）
+      this.cameras.main.scrollX -= dx;
+      this.cameras.main.scrollY -= dy;
+      
+      // 更新拖动起点
+      this.cameraStartDrag = { x: pointer.x, y: pointer.y };
+      return;
+    }
+    
     // 更新框选区域（仅在选择模式下）
-    if (this.selectionStart && this.inputMode === 'select') {
+    if (this.selectionStart && this.inputMode === 'select' && pointer.isDown) {
       const width = pointer.worldX - this.selectionStart.x;
       const height = pointer.worldY - this.selectionStart.y;
       
+      // 根据拖动方向更新矩形位置和尺寸
       if (width < 0) {
         this.selectionRect.x = pointer.worldX;
         this.selectionRect.width = Math.abs(width);
       } else {
+        this.selectionRect.x = this.selectionStart.x;
         this.selectionRect.width = width;
       }
       
@@ -508,6 +574,7 @@ export default class Game extends Phaser.Scene {
         this.selectionRect.y = pointer.worldY;
         this.selectionRect.height = Math.abs(height);
       } else {
+        this.selectionRect.y = this.selectionStart.y;
         this.selectionRect.height = height;
       }
     }
@@ -531,6 +598,13 @@ export default class Game extends Phaser.Scene {
     // 检查是否点击在游戏区域内（非UI区域）
     const isInGameArea = pointer.y < this.cameras.main.height - this.controlPanelHeight;
     
+    // 如果在相机模式，重置拖动状态
+    if (this.inputMode === 'camera') {
+      this.cameraStartDrag = null;
+      this.input.setDefaultCursor('grab');
+      return;
+    }
+    
     if (!isInGameArea || !this.selectionStart) {
       // 点击在UI区域内，或没有开始选择，不处理
       return;
@@ -541,47 +615,60 @@ export default class Game extends Phaser.Scene {
     
     // 仅在选择模式下处理
     if (this.inputMode === 'select') {
+      // 计算真实的选择区域（处理负值宽高）
+      const selectionBounds = this.getSelectionBounds();
+      
       // 如果框选区域很小，视为点击
-      if (this.selectionRect.width < 5 && this.selectionRect.height < 5) {
-        // 清除之前的选择
-        this.clearSelection();
-        
+      if (selectionBounds.width < 5 && selectionBounds.height < 5) {
         // 检查是否点击了实体
         const clickedEntity = this.getEntityAtPosition(pointer.worldX, pointer.worldY);
         
+        // 保存当前选择的实体，供后续判断使用
+        const currentSelectedEntities = [...this.selectedEntities];
+        const hasSelectedWorker = currentSelectedEntities.length > 0 && currentSelectedEntities[0].type === 'worker';
+        
         if (clickedEntity) {
-          // 如果点击了敌人单位或建筑，并且已选择了玩家单位，则发起攻击
-          if (
-            (clickedEntity.faction === 'enemy') && 
-            this.selectedEntities.length > 0 && 
-            this.selectedEntities[0].faction === 'player'
-          ) {
-            this.attackTarget(clickedEntity);
-          }
-          // 如果点击了资源，并且选择了工人，则收集资源
-          else if (
-            clickedEntity instanceof Resource && 
-            this.selectedEntities.length > 0 && 
-            this.selectedEntities[0].type === 'worker'
-          ) {
+          // 如果点击了资源，并且已选择了工人，则收集资源
+          if (clickedEntity instanceof Resource && hasSelectedWorker) {
             this.harvestResource(clickedEntity);
+            // 不清除选择，直接返回
+            this.selectionStart = null;
+            this.selectionRect.setVisible(false);
+            return;
           }
-          // 否则选择该实体
-          else if (clickedEntity.faction === 'player') {
+          
+          // 如果点击了敌人单位或建筑，并且已选择了玩家单位，则发起攻击
+          if (clickedEntity.faction === 'enemy' && currentSelectedEntities.length > 0 && currentSelectedEntities[0].faction === 'player') {
+            this.attackTarget(clickedEntity);
+            // 不清除选择，直接返回
+            this.selectionStart = null;
+            this.selectionRect.setVisible(false);
+            return;
+          }
+          
+          // 这里才清除之前的选择（只有需要选择新实体时）
+          this.clearSelection();
+          
+          // 如果点击了玩家实体，选择它
+          if (clickedEntity.faction === 'player') {
             this.selectEntity(clickedEntity);
           }
         } else {
-          // 如果选中了单位，则移动到点击位置
-          if (
-            this.selectedEntities.length > 0 && 
-            this.selectedEntities[0] instanceof Unit
-          ) {
+          // 如果点击了空地，并且已选择了单位，则移动单位到点击位置
+          if (currentSelectedEntities.length > 0 && currentSelectedEntities[0] instanceof Unit) {
             this.moveSelectedUnits(pointer.worldX, pointer.worldY);
+            // 不清除选择，直接返回
+            this.selectionStart = null;
+            this.selectionRect.setVisible(false);
+            return;
           }
+          
+          // 点击空地且没有选择单位时，清除选择
+          this.clearSelection();
         }
       } else {
         // 处理区域选择
-        this.handleAreaSelection();
+        this.handleAreaSelection(selectionBounds);
       }
     }
     
@@ -635,21 +722,27 @@ export default class Game extends Phaser.Scene {
     return null;
   }
   
-  handleAreaSelection() {
+  handleAreaSelection(bounds) {
     // 清除之前的选择
     this.clearSelection();
     
     // 选择区域内的所有玩家单位
     this.playerUnits.forEach(unit => {
+      // 使用修正后的边界判断
       if (
-        unit.x >= this.selectionRect.x &&
-        unit.x <= this.selectionRect.x + this.selectionRect.width &&
-        unit.y >= this.selectionRect.y &&
-        unit.y <= this.selectionRect.y + this.selectionRect.height
+        unit.x >= bounds.x &&
+        unit.x <= bounds.x + bounds.width &&
+        unit.y >= bounds.y &&
+        unit.y <= bounds.y + bounds.height
       ) {
         this.selectEntity(unit, true); // true表示添加到选择，不清除之前的选择
       }
     });
+    
+    // 显示选择数量信息
+    if (this.selectedEntities.length > 0) {
+      this.showMessage(`已选择 ${this.selectedEntities.length} 个单位`);
+    }
   }
   
   clearSelection() {
@@ -691,11 +784,23 @@ export default class Game extends Phaser.Scene {
   }
   
   harvestResource(resource) {
-    this.selectedEntities.forEach(entity => {
-      if (entity instanceof Unit && entity.type === 'worker') {
-        entity.harvestResource(resource);
-      }
+    // 确保只有工人才能收集资源
+    const workers = this.selectedEntities.filter(entity => entity.type === 'worker');
+    
+    if (workers.length === 0) {
+      this.showMessage('需要工人才能收集资源');
+      return;
+    }
+    
+    workers.forEach(worker => {
+      worker.harvestResource(resource);
     });
+    
+    // 显示消息
+    this.showMessage(`派遣${workers.length}个工人收集资源`);
+    
+    // 显示视觉反馈
+    this.showMoveIndicator(resource.x, resource.y);
   }
   
   startBuildMode(buildingType) {
@@ -722,6 +827,9 @@ export default class Game extends Phaser.Scene {
     
     this.buildingToPlace.setAlpha(0.7);
     this.buildingToPlace.setData('type', buildingType);
+    
+    // 记录建筑类型便于调试
+    this.logDebug(`开始建造模式: ${buildingType}`);
   }
   
   cancelBuildMode() {
@@ -803,10 +911,10 @@ export default class Game extends Phaser.Scene {
     // AI行为更新
     this.updateEnemyAI();
     
-    // 资源生产
+    // 资源生产 - 增加基础产出
     this.buildings.forEach(building => {
       if (building.faction === 'player' && building.type === 'base') {
-        this.resources += 5; // 每秒基础产出
+        this.resources += 10; // 每秒基础产出从5增加到10
       }
     });
     
@@ -893,7 +1001,7 @@ export default class Game extends Phaser.Scene {
               damage: 5,
               attackRange: 20,
               attackSpeed: 1,
-              harvestAmount: 10
+              harvestAmount: 20
             }
           );
           
@@ -952,8 +1060,8 @@ export default class Game extends Phaser.Scene {
         damage: 5,
         attackRange: 20,
         attackSpeed: 1,
-        harvestAmount: 10,
-        cost: 50
+        harvestAmount: 20,
+        cost: 30
       },
       'soldier': {
         health: 100,
@@ -961,7 +1069,7 @@ export default class Game extends Phaser.Scene {
         damage: 20,
         attackRange: 50,
         attackSpeed: 1.5,
-        cost: 80
+        cost: 40
       }
     }[type];
     
@@ -1124,22 +1232,24 @@ export default class Game extends Phaser.Scene {
     // 创建控制按钮
     const buttonSize = 80;
     const buttonY = height - controlPanelHeight/2;
-    const buttonSpacing = width / 5;
+    const buttonSpacing = width / 6; // 调整间距，因为我们增加了一个按钮
     
     // 创建控制按钮数组
     this.controlButtons = [];
     
-    // 创建按钮：选择、移动、攻击、建造
+    // 创建按钮：选择、移动、攻击、建造、相机移动
     const selectBtn = this.createUIButton('选择', buttonSpacing * 1, buttonY, 0x00ff00, () => this.setInputMode('select'));
     const moveBtn = this.createUIButton('移动', buttonSpacing * 2, buttonY, 0x0088ff, () => this.setInputMode('move'));
     const attackBtn = this.createUIButton('攻击', buttonSpacing * 3, buttonY, 0xff0000, () => this.setInputMode('attack'));
     const buildBtn = this.createUIButton('建造', buttonSpacing * 4, buttonY, 0xffaa00, () => this.showBuildMenu());
+    const cameraBtn = this.createUIButton('相机', buttonSpacing * 5, buttonY, 0xaaaaaa, () => this.setInputMode('camera'));
     
     // 将按钮添加到controlButtons数组
     this.controlButtons.push(selectBtn);
     this.controlButtons.push(moveBtn);
     this.controlButtons.push(attackBtn);
     this.controlButtons.push(buildBtn);
+    this.controlButtons.push(cameraBtn); // 添加相机控制按钮
     
     // 默认高亮选择按钮
     selectBtn.background.setFillStyle(0x88aa88);
@@ -1369,5 +1479,15 @@ export default class Game extends Phaser.Scene {
     
     this.actionButtons = [];
     this.actionButtonCallbacks = [];
+  }
+
+  // 获取框选区域的真实边界
+  getSelectionBounds() {
+    const x = Math.min(this.selectionStart.x, this.selectionRect.x);
+    const y = Math.min(this.selectionStart.y, this.selectionRect.y);
+    const width = Math.abs(this.selectionRect.width);
+    const height = Math.abs(this.selectionRect.height);
+    
+    return { x, y, width, height };
   }
 } 

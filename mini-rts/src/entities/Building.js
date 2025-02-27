@@ -1,6 +1,6 @@
 export default class Building extends Phaser.GameObjects.Sprite {
   constructor(scene, x, y, type, faction, props) {
-    super(scene, x, y, `${faction}-${type}`);
+    super(scene, x, y, type);
     
     this.scene = scene;
     this.x = x;
@@ -160,16 +160,16 @@ export default class Building extends Phaser.GameObjects.Sprite {
       return;
     }
     
-    // 设置生产参数
+    // 设置生产参数 - 大幅减少生产时间
     const productionTimes = {
-      'worker': 10,
-      'soldier': 15
+      'worker': 3, // 从10秒减为3秒
+      'soldier': 4  // 从15秒减为4秒
     };
     
-    // 检查玩家资源是否足够
+    // 检查玩家资源是否足够 - 降低资源成本
     const unitCosts = {
-      'worker': 50,
-      'soldier': 80
+      'worker': 30, // 从50减为30
+      'soldier': 40  // 从80减为40
     };
     
     if (this.faction === 'player' && this.scene.resources < unitCosts[unitType]) {
