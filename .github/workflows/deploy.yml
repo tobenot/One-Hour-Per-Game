@@ -1,0 +1,58 @@
+name: Deploy Games to GitHub Pages
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      
+      - name: Setup Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: "18"
+          cache: 'npm'
+      
+      - name: Setup Pages
+        uses: actions/configure-pages@v3
+      
+      - name: Build Landing Page
+        run: |
+          # 未来会添加一个构建主页的脚本
+          echo "主页构建将在未来实现"
+      
+      - name: Build Games
+        run: |
+          # 遍历每个游戏目录进行构建
+          # 未来将实现自动构建所有游戏的脚本
+          echo "游戏构建将在未来实现"
+      
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v1
+        with:
+          path: './dist'
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v1 
