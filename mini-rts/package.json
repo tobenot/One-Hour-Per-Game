@@ -1,0 +1,24 @@
+{
+  "name": "mini-rts",
+  "version": "1.0.0",
+  "description": "一个简单的RTS游戏，在一小时内完成",
+  "main": "index.js",
+  "scripts": {
+    "start": "parcel src/index.html --open",
+    "build": "parcel build src/index.html --out-dir ../dist/mini-rts --public-url ./"
+  },
+  "keywords": [
+    "game",
+    "rts",
+    "phaser",
+    "html5"
+  ],
+  "author": "One-Hour-Per-Game",
+  "license": "MIT",
+  "dependencies": {
+    "phaser": "^3.55.2"
+  },
+  "devDependencies": {
+    "parcel-bundler": "^1.12.5"
+  }
+} 
