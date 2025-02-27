@@ -1,11 +1,13 @@
 import Unit from '../entities/Unit';
 import Building from '../entities/Building';
 import Resource from '../entities/Resource';
-import UI from '../ui/UI';
 
 export default class Game extends Phaser.Scene {
   constructor() {
     super('Game');
+    
+    // 添加调试日志
+    this.logDebug('Game场景已构造');
     
     // 游戏状态
     this.resources = 50; // 初始资源
@@ -18,59 +20,165 @@ export default class Game extends Phaser.Scene {
     // 建造状态
     this.buildMode = false;
     this.buildingToPlace = null;
+
+    // 输入模式
+    this.inputMode = 'select'; // 'select', 'move', 'attack', 'build'
+  }
+
+  // 调试日志辅助函数
+  logDebug(message, type = 'info') {
+    if (window.debugLog) {
+      window.debugLog(`[Game] ${message}`, type);
+    } else {
+      console.log(`[Game] ${message}`);
+    }
   }
 
   create() {
-    // 创建地图
-    this.createMap();
+    this.logDebug('Game场景create开始');
     
-    // 创建资源点
-    this.createResources();
+    try {
+      // 记录游戏画布尺寸
+      const width = this.cameras.main.width;
+      const height = this.cameras.main.height;
+      this.logDebug(`游戏画布尺寸: ${width}x${height}`);
+      
+      // 创建地图
+      this.createMap();
+      this.logDebug('游戏地图已创建');
+      
+      // 创建资源点
+      this.createResources();
+      this.logDebug(`已创建${this.resourceNodes.length}个资源点`);
+      
+      // 创建玩家的初始基地和单位
+      this.createPlayerBase();
+      this.logDebug(`已创建玩家基地和${this.playerUnits.length}个单位`);
+      
+      // 创建敌人基地和单位
+      this.createEnemyBase();
+      this.logDebug(`已创建敌人基地和${this.enemyUnits.length}个单位`);
+      
+      // 设置相机控制
+      this.setupCamera();
+      this.logDebug('相机控制已设置');
+      
+      // 设置输入处理
+      this.setupInput();
+      this.logDebug('输入处理已设置');
+      
+      // 创建游戏主UI
+      this.createGameUI();
+      this.logDebug('游戏UI已创建');
+      
+      // 游戏逻辑更新事件
+      this.time.addEvent({
+        delay: 1000, // 每秒更新一次
+        callback: this.updateGameLogic,
+        callbackScope: this,
+        loop: true
+      });
+      this.logDebug('游戏逻辑更新定时器已设置');
+      
+      // 禁用浏览器右键菜单
+      this.input.mouse.disableContextMenu();
+      this.logDebug('已禁用浏览器右键菜单');
+      
+      this.logDebug('Game场景创建完成', 'success');
+    } catch (error) {
+      this.logDebug(`Game场景创建失败: ${error.message}`, 'error');
+      console.error(error);
+    }
     
-    // 创建玩家的初始基地和单位
-    this.createPlayerBase();
-    
-    // 创建敌人基地和单位
-    this.createEnemyBase();
-    
-    // 创建UI
-    this.ui = new UI(this);
-    
-    // 设置相机控制
-    this.setupCamera();
-    
-    // 设置输入处理
-    this.setupInput();
-    
-    // 游戏逻辑更新事件
-    this.time.addEvent({
-      delay: 1000, // 每秒更新一次
-      callback: this.updateGameLogic,
-      callbackScope: this,
-      loop: true
+    // 添加FPS显示
+    this.fpsText = this.add.text(10, 10, 'FPS: 0', { 
+      fontSize: '16px', 
+      color: '#ffffff',
+      backgroundColor: '#333333',
+      padding: { x: 5, y: 2 }
     });
+    this.fpsText.setScrollFactor(0);
+    this.fpsText.setDepth(999);
+    
+    // 添加调试按钮测试 - 直接在Game场景中添加一个固定按钮
+    this.debugButton = this.add.rectangle(100, this.cameras.main.height - 50, 120, 80, 0xff00ff);
+    this.debugButton.setScrollFactor(0);
+    this.debugButton.setDepth(999);
+    this.debugButton.setInteractive({ useHandCursor: true });
+    
+    this.debugButtonText = this.add.text(100, this.cameras.main.height - 50, '调试按钮', {
+      fontSize: '18px',
+      fontFamily: 'Arial',
+      color: '#ffffff',
+      fontStyle: 'bold'
+    });
+    this.debugButtonText.setScrollFactor(0);
+    this.debugButtonText.setOrigin(0.5);
+    this.debugButtonText.setDepth(1000);
+    
+    this.debugButton.on('pointerdown', () => {
+      console.log('调试按钮被点击');
+      this.showMessage('调试按钮被点击');
+    });
+    
+    console.log('调试按钮已创建，位置:', 100, this.cameras.main.height - 50);
   }
   
-  update() {
-    // 更新所有单位
-    [...this.playerUnits, ...this.enemyUnits].forEach(unit => {
-      unit.update();
+  update(time, delta) {
+    // 更新FPS显示
+    if (this.fpsText) {
+      this.fpsText.setText(`FPS: ${Math.round(1000 / delta)}`);
+    }
+    
+    // 记录第一次帧渲染
+    if (!this.hasLoggedFirstFrame) {
+      this.hasLoggedFirstFrame = true;
+      this.logDebug('第一帧已渲染', 'success');
+      
+      // 获取渲染器类型
+      let rendererType = '未知';
+      if (this.game.renderer instanceof Phaser.Renderer.Canvas.CanvasRenderer) {
+        rendererType = 'Canvas';
+      } else if (this.game.renderer instanceof Phaser.Renderer.WebGL.WebGLRenderer) {
+        rendererType = 'WebGL';
+      }
+      this.logDebug(`使用渲染器: ${rendererType}`);
+      
+      // 记录渲染器详情
+      if (this.game.renderer.gl) {
+        const gl = this.game.renderer.gl;
+        const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
+        if (debugInfo) {
+          const vendor = gl.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL);
+          const renderer = gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL);
+          this.logDebug(`WebGL信息: ${vendor} - ${renderer}`);
+        }
+      }
+    }
+    
+    // 如果存在更新方法，调用更新方法
+    
+    // 更新玩家单位
+    this.playerUnits.forEach(unit => {
+      if (unit.update) unit.update(time, delta);
+    });
+    
+    // 更新敌人单位
+    this.enemyUnits.forEach(unit => {
+      if (unit.update) unit.update(time, delta);
     });
     
     // 更新建筑
     this.buildings.forEach(building => {
-      building.update();
+      if (building.update) building.update(time, delta);
     });
     
-    // 更新UI
-    this.ui.update();
-    
-    // 处理建筑放置模式
+    // 如果在建造模式，更新建筑位置跟随鼠标
     if (this.buildMode && this.buildingToPlace) {
-      // 让建筑跟随鼠标/触摸
       const pointer = this.input.activePointer;
-      this.buildingToPlace.x = pointer.worldX;
-      this.buildingToPlace.y = pointer.worldY;
+      const worldPoint = this.cameras.main.getWorldPoint(pointer.x, pointer.y);
+      this.buildingToPlace.x = worldPoint.x;
+      this.buildingToPlace.y = worldPoint.y;
     }
   }
   
@@ -173,6 +281,27 @@ export default class Game extends Phaser.Scene {
     // 将相机设置在玩家基地位置
     this.cameras.main.scrollX = 100;
     this.cameras.main.scrollY = 100;
+    
+    // 调整相机边界以避开底部控制面板
+    const controlPanelHeight = this.controlPanelHeight || 100;
+    
+    // 注意：不要使用setViewport，这会影响UI渲染
+    // 而是使用setBounds来限制相机的移动范围
+    this.logDebug(`设置相机视口，保留底部${controlPanelHeight}像素空间`);
+    
+    // 创建专门的UI相机，确保UI元素固定显示
+    this.uiCamera = this.cameras.add(0, 0, this.cameras.main.width, this.cameras.main.height);
+    this.uiCamera.setScroll(0, 0);
+    this.uiCamera.setName('uiCamera');
+    this.uiCamera.setBackgroundColor(0x000000);
+    this.uiCamera.transparent = true;
+    this.uiCamera.scrollX = 0;
+    this.uiCamera.scrollY = 0;
+    this.uiCamera.ignore(this.map);
+    
+    // 确保所有UI元素使用UI相机渲染
+    if (this.uiPanel) this.uiCamera.ignore(this.uiPanel);
+    if (this.panelBorder) this.uiCamera.ignore(this.panelBorder);
   }
   
   setupInput() {
@@ -181,42 +310,190 @@ export default class Game extends Phaser.Scene {
     this.selectionRect.setVisible(false);
     this.selectionRect.setOrigin(0, 0);
     
+    // 注册指针事件
     this.input.on('pointerdown', this.handlePointerDown, this);
     this.input.on('pointerup', this.handlePointerUp, this);
     this.input.on('pointermove', this.handlePointerMove, this);
     
-    // 按键控制
+    // 添加触摸滑动支持 - 用于移动相机
+    this.input.on('pointermove', pointer => {
+      if (pointer.isDown && pointer.downY < this.cameras.main.height - this.controlPanelHeight) {
+        // 仅在游戏区域内滑动才移动相机
+        if (pointer.prevPosition && !this.buildMode) {
+          const dx = pointer.position.x - pointer.prevPosition.x;
+          const dy = pointer.position.y - pointer.prevPosition.y;
+          this.cameras.main.scrollX -= dx;
+          this.cameras.main.scrollY -= dy;
+        }
+      }
+    });
+    
+    // 键盘控制
     this.cursors = this.input.keyboard.createCursorKeys();
     
-    // 建筑快捷键
-    this.input.keyboard.on('keydown-B', () => {
-      this.startBuildMode('barracks');
+    // 快捷键
+    this.input.keyboard.on('keydown-ESC', () => {
+      this.cancelAction();
     });
     
-    this.input.keyboard.on('keydown-ESC', () => {
+    // 监听调整大小事件
+    this.scale.on('resize', () => this.handleResize());
+  }
+  
+  // 设置输入模式
+  setInputMode(mode) {
+    // 只有当模式真正改变时才进行处理
+    if (this.inputMode === mode && mode !== 'build') return;
+    
+    this.logDebug(`输入模式切换为: ${mode}`);
+    this.inputMode = mode;
+    
+    // 取消当前选择和任何激活的模式
+    if (mode !== 'build') {
       this.cancelBuildMode();
-    });
+    }
+    
+    // 重置选择状态（如果进入的不是选择模式）
+    if (mode !== 'select' && this.selectionRect) {
+      this.selectionRect.setVisible(false);
+      this.selectionStart = null;
+    }
+    
+    // 根据模式更新鼠标样式
+    switch(mode) {
+      case 'select':
+        this.input.setDefaultCursor('default');
+        break;
+      case 'move':
+        this.input.setDefaultCursor('crosshair');
+        break;
+      case 'attack':
+        this.input.setDefaultCursor('url(assets/attack-cursor.png), pointer');
+        break;
+      case 'build':
+        this.input.setDefaultCursor('cell');
+        break;
+    }
+    
+    // 显示提示消息
+    const modeMessages = {
+      'select': '选择模式：点击选择单位或建筑',
+      'move': '移动模式：点击地图移动选中的单位',
+      'attack': '攻击模式：点击敌人攻击',
+      'build': '建造模式：选择位置放置建筑'
+    };
+    
+    // 更新UI按钮高亮状态
+    if (this.controlButtons) {
+      const modeIndex = ['select', 'move', 'attack', 'build'].indexOf(mode);
+      if (modeIndex >= 0 && modeIndex < this.controlButtons.length) {
+        // 重置所有按钮颜色
+        this.controlButtons.forEach(btn => {
+          btn.background.setFillStyle(0x555555);
+        });
+        
+        // 高亮当前模式按钮
+        if (modeIndex < this.controlButtons.length) {
+          this.controlButtons[modeIndex].background.setFillStyle(0x88aa88);
+        }
+      }
+    }
+    
+    this.showMessage(modeMessages[mode] || '');
+  }
+  
+  // 取消当前操作
+  cancelAction() {
+    // 取消建造模式
+    if (this.buildMode) {
+      this.cancelBuildMode();
+    }
+    
+    // 取消选择
+    this.clearSelection();
+    
+    // 重置为选择模式
+    this.setInputMode('select');
+    
+    // 清除任何UI状态
+    this.clearActionButtons();
+    
+    // 确保控制按钮中的选择按钮被高亮显示
+    if (this.controlButtons && this.controlButtons.length > 0) {
+      // 重置所有按钮颜色
+      this.controlButtons.forEach(btn => {
+        btn.background.setFillStyle(0x555555);
+      });
+      
+      // 高亮选择模式按钮
+      this.controlButtons[0].background.setFillStyle(0x88aa88);
+    }
+  }
+  
+  // 处理窗口调整大小
+  handleResize() {
+    // 更新UI尺寸
+    const width = this.cameras.main.width;
+    const height = this.cameras.main.height;
+    
+    // 重新调整相机视口
+    const controlPanelHeight = this.controlPanelHeight || 100;
+    this.cameras.main.setViewport(0, 0, width, height - controlPanelHeight);
   }
   
   handlePointerDown(pointer) {
+    // 检查是否点击在游戏区域内（非UI区域）
+    const isInGameArea = pointer.y < this.cameras.main.height - this.controlPanelHeight;
+    
+    if (!isInGameArea) {
+      // 点击在UI区域内，不处理
+      return;
+    }
+    
     // 如果在建造模式，则放置建筑
     if (this.buildMode && this.buildingToPlace) {
       this.placeBuilding(pointer.worldX, pointer.worldY);
       return;
     }
     
-    // 开始框选
-    this.selectionStart = { x: pointer.worldX, y: pointer.worldY };
-    this.selectionRect.x = pointer.worldX;
-    this.selectionRect.y = pointer.worldY;
-    this.selectionRect.width = 0;
-    this.selectionRect.height = 0;
-    this.selectionRect.setVisible(true);
+    // 根据当前输入模式处理
+    switch (this.inputMode) {
+      case 'select':
+        // 开始框选
+        this.selectionStart = { x: pointer.worldX, y: pointer.worldY };
+        this.selectionRect.x = pointer.worldX;
+        this.selectionRect.y = pointer.worldY;
+        this.selectionRect.width = 0;
+        this.selectionRect.height = 0;
+        this.selectionRect.setVisible(true);
+        break;
+        
+      case 'move':
+        // 直接移动选中的单位
+        if (this.selectedEntities.length > 0) {
+          this.moveSelectedUnits(pointer.worldX, pointer.worldY);
+          
+          // 显示移动指示效果
+          this.showMoveIndicator(pointer.worldX, pointer.worldY);
+        }
+        break;
+        
+      case 'attack':
+        // 检查是否点击了敌方实体
+        const target = this.getEntityAtPosition(pointer.worldX, pointer.worldY);
+        if (target && target.faction === 'enemy' && this.selectedEntities.length > 0) {
+          this.attackTarget(target);
+          
+          // 显示攻击指示效果
+          this.showAttackIndicator(target.x, target.y);
+        }
+        break;
+    }
   }
   
   handlePointerMove(pointer) {
-    // 更新框选区域
-    if (this.selectionStart) {
+    // 更新框选区域（仅在选择模式下）
+    if (this.selectionStart && this.inputMode === 'select') {
       const width = pointer.worldX - this.selectionStart.x;
       const height = pointer.worldY - this.selectionStart.y;
       
@@ -235,62 +512,77 @@ export default class Game extends Phaser.Scene {
       }
     }
     
-    // 如果在移动相机模式
-    if (this.isMovingCamera) {
-      this.cameras.main.scrollX -= pointer.movementX;
-      this.cameras.main.scrollY -= pointer.movementY;
+    // 在建造模式下，建筑跟随鼠标
+    if (this.buildMode && this.buildingToPlace) {
+      const worldPoint = this.cameras.main.getWorldPoint(pointer.x, pointer.y);
+      this.buildingToPlace.x = worldPoint.x;
+      this.buildingToPlace.y = worldPoint.y;
+      
+      // 检查是否可以放置建筑
+      if (this.canPlaceBuilding(worldPoint.x, worldPoint.y)) {
+        this.buildingToPlace.setTint(0x00ff00); // 绿色 - 可以放置
+      } else {
+        this.buildingToPlace.setTint(0xff0000); // 红色 - 不可放置
+      }
     }
   }
   
   handlePointerUp(pointer) {
-    // 在建造模式中不处理
+    // 检查是否点击在游戏区域内（非UI区域）
+    const isInGameArea = pointer.y < this.cameras.main.height - this.controlPanelHeight;
+    
+    if (!isInGameArea || !this.selectionStart) {
+      // 点击在UI区域内，或没有开始选择，不处理
+      return;
+    }
+    
+    // 在建造模式中不处理选择操作
     if (this.buildMode) return;
     
-    // 如果框选区域很小，视为点击
-    if (
-      this.selectionRect.width < 5 && 
-      this.selectionRect.height < 5 && 
-      this.selectionStart
-    ) {
-      // 清除之前的选择
-      this.clearSelection();
-      
-      // 检查是否点击了实体
-      const clickedEntity = this.getEntityAtPosition(pointer.worldX, pointer.worldY);
-      
-      if (clickedEntity) {
-        // 如果点击了敌人单位或建筑，并且已选择了玩家单位，则发起攻击
-        if (
-          (clickedEntity.faction === 'enemy') && 
-          this.selectedEntities.length > 0 && 
-          this.selectedEntities[0].faction === 'player'
-        ) {
-          this.attackTarget(clickedEntity);
-        }
-        // 如果点击了资源，并且选择了工人，则收集资源
-        else if (
-          clickedEntity instanceof Resource && 
-          this.selectedEntities.length > 0 && 
-          this.selectedEntities[0].type === 'worker'
-        ) {
-          this.harvestResource(clickedEntity);
-        }
-        // 否则选择该实体
-        else if (clickedEntity.faction === 'player') {
-          this.selectEntity(clickedEntity);
+    // 仅在选择模式下处理
+    if (this.inputMode === 'select') {
+      // 如果框选区域很小，视为点击
+      if (this.selectionRect.width < 5 && this.selectionRect.height < 5) {
+        // 清除之前的选择
+        this.clearSelection();
+        
+        // 检查是否点击了实体
+        const clickedEntity = this.getEntityAtPosition(pointer.worldX, pointer.worldY);
+        
+        if (clickedEntity) {
+          // 如果点击了敌人单位或建筑，并且已选择了玩家单位，则发起攻击
+          if (
+            (clickedEntity.faction === 'enemy') && 
+            this.selectedEntities.length > 0 && 
+            this.selectedEntities[0].faction === 'player'
+          ) {
+            this.attackTarget(clickedEntity);
+          }
+          // 如果点击了资源，并且选择了工人，则收集资源
+          else if (
+            clickedEntity instanceof Resource && 
+            this.selectedEntities.length > 0 && 
+            this.selectedEntities[0].type === 'worker'
+          ) {
+            this.harvestResource(clickedEntity);
+          }
+          // 否则选择该实体
+          else if (clickedEntity.faction === 'player') {
+            this.selectEntity(clickedEntity);
+          }
+        } else {
+          // 如果选中了单位，则移动到点击位置
+          if (
+            this.selectedEntities.length > 0 && 
+            this.selectedEntities[0] instanceof Unit
+          ) {
+            this.moveSelectedUnits(pointer.worldX, pointer.worldY);
+          }
         }
       } else {
-        // 如果选中了单位，则移动到点击位置
-        if (
-          this.selectedEntities.length > 0 && 
-          this.selectedEntities[0] instanceof Unit
-        ) {
-          this.moveSelectedUnits(pointer.worldX, pointer.worldY);
-        }
+        // 处理区域选择
+        this.handleAreaSelection();
       }
-    } else {
-      // 处理区域选择
-      this.handleAreaSelection();
     }
     
     // 清理选择状态
@@ -367,7 +659,7 @@ export default class Game extends Phaser.Scene {
     });
     
     this.selectedEntities = [];
-    this.ui.updateSelection(null);
+    this.updateSelection(null);
   }
   
   selectEntity(entity, addToSelection = false) {
@@ -379,7 +671,7 @@ export default class Game extends Phaser.Scene {
     entity.setSelected(true);
     
     // 更新UI
-    this.ui.updateSelection(entity);
+    this.updateSelection(entity);
   }
   
   moveSelectedUnits(x, y) {
@@ -413,11 +705,13 @@ export default class Game extends Phaser.Scene {
     };
     
     if (this.resources < costs[buildingType]) {
-      this.ui.showMessage('资源不足');
+      this.showMessage('资源不足');
       return;
     }
     
+    // 设置为建造模式
     this.buildMode = true;
+    this.setInputMode('build');
     
     // 创建临时建筑用于放置
     this.buildingToPlace = this.add.image(
@@ -448,6 +742,7 @@ export default class Game extends Phaser.Scene {
       
       // 扣除资源
       this.resources -= costs[buildingType];
+      this.updateResources();
       
       // 创建实际建筑
       const buildingProps = {
@@ -465,10 +760,20 @@ export default class Game extends Phaser.Scene {
       // 清除建造模式
       this.cancelBuildMode();
       
+      // 重置为选择模式
+      this.setInputMode('select');
+      
       // 播放建造音效
-      this.sound.play('build');
+      try {
+        this.sound.play('build');
+      } catch (e) {
+        console.log('音效播放失败', e);
+      }
+      
+      // 显示成功消息
+      this.showMessage(`${buildingType === 'barracks' ? '兵营' : buildingType} 建造开始`);
     } else {
-      this.ui.showMessage('无法在此处建造');
+      this.showMessage('无法在此处建造');
     }
   }
   
@@ -506,7 +811,7 @@ export default class Game extends Phaser.Scene {
     });
     
     // 更新UI中的资源显示
-    this.ui.updateResources(this.resources);
+    this.updateResources();
   }
   
   setupEnemyAI() {
@@ -636,7 +941,7 @@ export default class Game extends Phaser.Scene {
   
   addResources(amount) {
     this.resources += amount;
-    this.ui.updateResources(this.resources);
+    this.updateResources();
   }
   
   createUnit(type, faction, x, y) {
@@ -662,14 +967,14 @@ export default class Game extends Phaser.Scene {
     
     // 检查资源是否足够
     if (faction === 'player' && this.resources < unitProps.cost) {
-      this.ui.showMessage('资源不足');
+      this.showMessage('资源不足');
       return null;
     }
     
     // 扣除资源
     if (faction === 'player') {
       this.resources -= unitProps.cost;
-      this.ui.updateResources(this.resources);
+      this.updateResources();
     }
     
     // 创建单位
@@ -682,5 +987,387 @@ export default class Game extends Phaser.Scene {
     }
     
     return unit;
+  }
+  
+  // 显示移动指示器
+  showMoveIndicator(x, y) {
+    // 创建一个移动指示动画
+    const indicator = this.add.circle(x, y, 10, 0x00ff00, 0.7);
+    
+    // 添加动画效果
+    this.tweens.add({
+      targets: indicator,
+      alpha: 0,
+      scale: 2,
+      duration: 500,
+      onComplete: () => {
+        indicator.destroy();
+      }
+    });
+  }
+  
+  // 显示攻击指示器
+  showAttackIndicator(x, y) {
+    // 创建一个攻击指示动画
+    const indicator = this.add.circle(x, y, 15, 0xff0000, 0.7);
+    
+    // 添加动画效果
+    this.tweens.add({
+      targets: indicator,
+      alpha: 0,
+      scale: 2,
+      duration: 500,
+      onComplete: () => {
+        indicator.destroy();
+      }
+    });
+  }
+
+  // 显示消息
+  showMessage(text) {
+    if (this.messageText) {
+      // 使用内置消息显示
+      this.messageText.setText(text);
+      this.messageText.setVisible(true);
+      
+      // 清除之前的计时器
+      if (this.messageTimer) {
+        this.messageTimer.remove();
+      }
+      
+      // 设置新计时器
+      this.messageTimer = this.time.delayedCall(3000, () => {
+        this.messageText.setVisible(false);
+      });
+    } else {
+      // 创建临时消息
+      console.log('直接消息显示：', text);
+      
+      const tempMsg = this.add.text(this.cameras.main.width / 2, 100, text, {
+        fontSize: '20px',
+        fontFamily: 'Arial',
+        color: '#ffffff',
+        backgroundColor: '#000000',
+        padding: { x: 10, y: 5 }
+      });
+      tempMsg.setScrollFactor(0);
+      tempMsg.setOrigin(0.5);
+      tempMsg.setDepth(1000);
+      
+      // 3秒后自动消失
+      this.time.delayedCall(3000, () => {
+        tempMsg.destroy();
+      });
+    }
+  }
+  
+  // 显示建造菜单
+  showBuildMenu() {
+    const buttonY = this.cameras.main.height - this.controlPanelHeight/2;
+    const width = this.cameras.main.width;
+    
+    // 记录当前建造按钮
+    if (!this.buildButtons) {
+      this.buildButtons = [];
+    } else {
+      // 清除之前的建造按钮
+      this.buildButtons.forEach(btn => {
+        btn.button.destroy();
+        btn.text.destroy();
+      });
+      this.buildButtons = [];
+    }
+    
+    // 添加建造选项
+    const barracksBtn = this.createUIButton('兵营 (100资源)', width * 0.3, buttonY, 0xaa00ff, () => {
+      this.startBuildMode('barracks');
+    });
+    this.buildButtons.push(barracksBtn);
+    
+    // 添加取消按钮
+    const cancelBtn = this.createUIButton('取消', width * 0.7, buttonY, 0x888888, () => {
+      // 清除建造按钮
+      this.buildButtons.forEach(btn => {
+        btn.button.destroy();
+        btn.text.destroy();
+      });
+      this.buildButtons = [];
+      
+      // 恢复选择模式
+      this.setInputMode('select');
+    });
+    this.buildButtons.push(cancelBtn);
+    
+    // 设置消息提示
+    this.showMessage('选择要建造的建筑');
+  }
+
+  // 创建游戏UI (新方法，直接在Game类中创建UI，而不使用UI类)
+  createGameUI() {
+    // 创建底部控制面板
+    const controlPanelHeight = 100;
+    const width = this.cameras.main.width;
+    const height = this.cameras.main.height;
+    
+    // 创建底部面板
+    this.uiPanel = this.add.rectangle(width / 2, height - controlPanelHeight/2, width, controlPanelHeight, 0x333333, 0.85);
+    this.uiPanel.setScrollFactor(0);
+    this.uiPanel.setDepth(900);
+    
+    // 添加边框
+    this.panelBorder = this.add.graphics();
+    this.panelBorder.lineStyle(2, 0x666666, 1);
+    this.panelBorder.strokeRect(0, height - controlPanelHeight, width, controlPanelHeight);
+    this.panelBorder.setScrollFactor(0);
+    this.panelBorder.setDepth(900);
+    
+    // 创建控制按钮
+    const buttonSize = 80;
+    const buttonY = height - controlPanelHeight/2;
+    const buttonSpacing = width / 5;
+    
+    // 创建控制按钮数组
+    this.controlButtons = [];
+    
+    // 创建按钮：选择、移动、攻击、建造
+    const selectBtn = this.createUIButton('选择', buttonSpacing * 1, buttonY, 0x00ff00, () => this.setInputMode('select'));
+    const moveBtn = this.createUIButton('移动', buttonSpacing * 2, buttonY, 0x0088ff, () => this.setInputMode('move'));
+    const attackBtn = this.createUIButton('攻击', buttonSpacing * 3, buttonY, 0xff0000, () => this.setInputMode('attack'));
+    const buildBtn = this.createUIButton('建造', buttonSpacing * 4, buttonY, 0xffaa00, () => this.showBuildMenu());
+    
+    // 将按钮添加到controlButtons数组
+    this.controlButtons.push(selectBtn);
+    this.controlButtons.push(moveBtn);
+    this.controlButtons.push(attackBtn);
+    this.controlButtons.push(buildBtn);
+    
+    // 默认高亮选择按钮
+    selectBtn.background.setFillStyle(0x88aa88);
+    
+    // 创建资源显示
+    this.resourceIcon = this.add.image(20, 20, 'resource-icon');
+    this.resourceIcon.setScrollFactor(0);
+    this.resourceIcon.setScale(0.5);
+    this.resourceIcon.setDepth(900);
+    
+    this.resourceText = this.add.text(40, 20, `${this.resources}`, {
+      fontSize: '18px',
+      fontFamily: 'Arial',
+      color: '#ffffff'
+    });
+    this.resourceText.setScrollFactor(0);
+    this.resourceText.setDepth(900);
+    
+    // 创建信息显示区域
+    this.infoText = this.add.text(width / 2, height - controlPanelHeight + 20, '准备开始游戏', {
+      fontSize: '16px',
+      fontFamily: 'Arial',
+      color: '#ffffff',
+      align: 'center'
+    });
+    this.infoText.setScrollFactor(0);
+    this.infoText.setOrigin(0.5, 0);
+    this.infoText.setDepth(900);
+    
+    // 创建消息显示
+    this.messageText = this.add.text(width / 2, height * 0.2, '', {
+      fontSize: '20px',
+      fontFamily: 'Arial',
+      color: '#ffffff',
+      backgroundColor: '#000000',
+      padding: { x: 10, y: 5 }
+    });
+    this.messageText.setScrollFactor(0);
+    this.messageText.setOrigin(0.5);
+    this.messageText.setVisible(false);
+    this.messageText.setDepth(900);
+    
+    // 消息计时器
+    this.messageTimer = null;
+    
+    // 存储控制面板高度
+    this.controlPanelHeight = controlPanelHeight;
+  }
+  
+  // 创建UI按钮
+  createUIButton(text, x, y, color, callback) {
+    // 创建按钮背景
+    const button = this.add.rectangle(x, y, 100, 60, color, 0.9);
+    button.setScrollFactor(0);
+    button.setInteractive({ useHandCursor: true });
+    button.setDepth(901);
+    
+    // 创建按钮文本
+    const buttonText = this.add.text(x, y, text, {
+      fontSize: '18px',
+      fontFamily: 'Arial',
+      color: '#ffffff',
+      fontStyle: 'bold'
+    });
+    buttonText.setScrollFactor(0);
+    buttonText.setOrigin(0.5);
+    buttonText.setDepth(902);
+    
+    // 添加交互效果
+    button.on('pointerover', () => {
+      button.setAlpha(1);
+      buttonText.setScale(1.1);
+    });
+    
+    button.on('pointerout', () => {
+      button.setAlpha(0.9);
+      buttonText.setScale(1);
+    });
+    
+    button.on('pointerdown', () => {
+      try {
+        if (this.sound.get('click')) {
+          this.sound.play('click');
+        }
+      } catch (e) {
+        console.log('音效播放失败');
+      }
+      callback();
+    });
+    
+    return { background: button, text: buttonText };
+  }
+
+  // 更新资源显示
+  updateResources(amount) {
+    // 更新资源数值
+    if (amount !== undefined) {
+      this.resources = amount;
+    }
+    
+    // 更新显示
+    if (this.resourceText) {
+      this.resourceText.setText(`${this.resources}`);
+    }
+  }
+
+  // 修改为Game类自己的updateSelection方法
+  updateSelection(entity) {
+    // 清除之前的操作按钮
+    this.clearActionButtons();
+    
+    // 如果没有选择任何实体，只显示基础信息
+    if (!entity) {
+      if (this.infoText) {
+        this.infoText.setText('没有选择单位');
+      }
+      return;
+    }
+    
+    // 根据选择的实体类型更新信息和操作按钮
+    if (entity.faction === 'player') {
+      // 显示实体信息
+      let info = `${entity.type === 'worker' ? '工人' : entity.type === 'soldier' ? '士兵' : entity.type === 'base' ? '基地' : entity.type === 'barracks' ? '兵营' : entity.type}`;
+      info += ` - 生命值: ${Math.floor(entity.health)}/${entity.maxHealth}`;
+      
+      if (entity.type === 'worker') {
+        info += ` | 收集效率: ${entity.harvestAmount}`;
+        
+        // 为工人添加建造按钮
+        this.addActionButton('建造兵营', () => {
+          this.startBuildMode('barracks');
+        });
+      } else if (entity.type === 'soldier') {
+        info += ` | 攻击力: ${entity.damage}`;
+      } else if (entity.type === 'base') {
+        // 为基地添加生产工人按钮
+        this.addActionButton('生产工人', () => {
+          entity.startProduction('worker');
+        });
+      } else if (entity.type === 'barracks') {
+        // 为兵营添加生产士兵按钮
+        this.addActionButton('生产士兵', () => {
+          entity.startProduction('soldier');
+        });
+      }
+      
+      if (this.infoText) {
+        this.infoText.setText(info);
+      }
+    } else {
+      // 显示敌人信息
+      if (this.infoText) {
+        this.infoText.setText(`敌方 ${entity.type} - 生命值: ${Math.floor(entity.health)}/${entity.maxHealth}`);
+      }
+    }
+  }
+  
+  // 添加操作按钮（底部面板内的按钮）
+  addActionButton(text, callback) {
+    // 如果还没有操作按钮数组，创建一个
+    if (!this.actionButtons) {
+      this.actionButtons = [];
+      this.actionButtonCallbacks = [];
+    }
+    
+    const buttonIndex = this.actionButtons.length;
+    // 操作按钮放在底部面板内部
+    const buttonY = this.cameras.main.height - this.controlPanelHeight/2;
+    const buttonX = this.cameras.main.width * 0.3 + buttonIndex * 150;
+    
+    // 创建按钮背景
+    const button = this.add.rectangle(buttonX, buttonY, 150, 50, 0xff00ff);
+    button.setScrollFactor(0);
+    button.setInteractive({ useHandCursor: true });
+    button.setDepth(910); // 确保按钮显示在面板上方
+    
+    // 创建按钮文本
+    const buttonText = this.add.text(buttonX, buttonY, text, {
+      fontSize: '18px',
+      fontFamily: 'Arial',
+      color: '#ffffff',
+      fontStyle: 'bold'
+    });
+    buttonText.setScrollFactor(0);
+    buttonText.setOrigin(0.5);
+    buttonText.setDepth(911); // 文本深度比按钮高一点，确保显示
+    
+    // 添加点击效果
+    button.on('pointerover', () => {
+      button.setFillStyle(0x888888);
+    });
+    
+    button.on('pointerout', () => {
+      button.setFillStyle(0xff00ff);
+    });
+    
+    button.on('pointerdown', () => {
+      try {
+        if (this.sound.get('click')) {
+          this.sound.play('click');
+        }
+      } catch (e) {
+        console.log('音效播放失败');
+      }
+      callback();
+    });
+    
+    // 存储按钮引用
+    this.actionButtons.push({ background: button, text: buttonText });
+    this.actionButtonCallbacks.push(callback);
+  }
+  
+  // 清除所有操作按钮
+  clearActionButtons() {
+    // 如果还没有操作按钮数组，创建一个
+    if (!this.actionButtons) {
+      this.actionButtons = [];
+      this.actionButtonCallbacks = [];
+      return;
+    }
+    
+    // 清除所有操作按钮
+    this.actionButtons.forEach(button => {
+      button.background.destroy();
+      button.text.destroy();
+    });
+    
+    this.actionButtons = [];
+    this.actionButtonCallbacks = [];
   }
 } 

@@ -206,7 +206,13 @@ export default class Unit {
     this.target.takeDamage(this.damage);
     
     // 播放攻击音效
-    this.scene.sound.play('battle');
+    try {
+      if (this.scene.sound.get('battle')) {
+        this.scene.sound.play('battle');
+      }
+    } catch (e) {
+      console.log('音效播放失败');
+    }
   }
   
   stopAttacking() {
