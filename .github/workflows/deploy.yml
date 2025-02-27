@@ -82,7 +82,6 @@ jobs:
               cd mini-rts
               npm install
               npm run build
-              cp -r dist/* ../dist/mini-rts/
               cd ..
             else
               # 如果没有构建系统，直接复制文件
