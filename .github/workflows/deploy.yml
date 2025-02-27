@@ -91,22 +91,20 @@ jobs:
               
               # 如果没有index.html，创建一个简单的入口页面
               if [ ! -f "dist/mini-rts/index.html" ]; then
-                cat > dist/mini-rts/index.html << 'EOF'
-<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>迷你RTS - 一小时游戏挑战</title>
-  <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
-  <link rel="stylesheet" href="style.css">
-</head>
-<body>
-  <div id="game-container"></div>
-  <script src="index.js"></script>
-</body>
-</html>
-EOF
+                echo '<!DOCTYPE html>' > dist/mini-rts/index.html
+                echo '<html lang="zh-CN">' >> dist/mini-rts/index.html
+                echo '<head>' >> dist/mini-rts/index.html
+                echo '  <meta charset="UTF-8">' >> dist/mini-rts/index.html
+                echo '  <meta name="viewport" content="width=device-width, initial-scale=1.0">' >> dist/mini-rts/index.html
+                echo '  <title>迷你RTS - 一小时游戏挑战</title>' >> dist/mini-rts/index.html
+                echo '  <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>' >> dist/mini-rts/index.html
+                echo '  <link rel="stylesheet" href="style.css">' >> dist/mini-rts/index.html
+                echo '</head>' >> dist/mini-rts/index.html
+                echo '<body>' >> dist/mini-rts/index.html
+                echo '  <div id="game-container"></div>' >> dist/mini-rts/index.html
+                echo '  <script src="index.js"></script>' >> dist/mini-rts/index.html
+                echo '</body>' >> dist/mini-rts/index.html
+                echo '</html>' >> dist/mini-rts/index.html
               fi
             fi
             
