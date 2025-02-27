@@ -19,30 +19,106 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       
       - name: Setup Node
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: "18"
+          node-version: "20"
           cache: 'npm'
       
       - name: Setup Pages
-        uses: actions/configure-pages@v3
+        uses: actions/configure-pages@v4
       
       - name: Build Landing Page
         run: |
-          # 未来会添加一个构建主页的脚本
-          echo "主页构建将在未来实现"
+          # 创建dist目录
+          mkdir -p dist
+          # 创建一个简单的主页
+          cat > dist/index.html << EOF
+          <!DOCTYPE html>
+          <html lang="zh-CN">
+          <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>One-Hour-Per-Game | 一小时游戏开发挑战</title>
+            <style>
+              body { font-family: 'Arial', sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+              h1 { color: #333; }
+              .game-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; }
+              .game-card { border: 1px solid #ddd; border-radius: 8px; padding: 15px; transition: transform 0.3s; }
+              .game-card:hover { transform: translateY(-5px); box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+              a { color: #0366d6; text-decoration: none; }
+            </style>
+          </head>
+          <body>
+            <h1>One-Hour-Per-Game | 一小时游戏开发挑战</h1>
+            <p>每个游戏都是在严格的60分钟时间限制下完成的，展示了现代AI工具在游戏开发中的潜力和应用。</p>
+            
+            <div class="game-list">
+              <div class="game-card">
+                <h2>迷你RTS</h2>
+                <p>一个简单的即时战略游戏，包含资源收集、建造和战斗系统。</p>
+                <a href="./mini-rts/">开始游戏</a>
+              </div>
+              <!-- 更多游戏将在这里添加 -->
+            </div>
+          </body>
+          </html>
+          EOF
       
       - name: Build Games
         run: |
-          # 遍历每个游戏目录进行构建
+          # 构建mini-rts游戏
+          if [ -d "mini-rts" ]; then
+            echo "开始构建迷你RTS游戏..."
+            
+            # 创建构建目录
+            mkdir -p dist/mini-rts
+            
+            # 安装依赖并构建（如果有package.json）
+            if [ -f "mini-rts/package.json" ]; then
+              cd mini-rts
+              npm install
+              npm run build
+              cp -r dist/* ../dist/mini-rts/
+              cd ..
+            else
+              # 如果没有构建系统，直接复制文件
+              cp -r mini-rts/src/* dist/mini-rts/
+              cp -r mini-rts/public/* dist/mini-rts/ 2>/dev/null || :
+              
+              # 如果没有index.html，创建一个简单的入口页面
+              if [ ! -f "dist/mini-rts/index.html" ]; then
+                cat > dist/mini-rts/index.html << EOF
+                <!DOCTYPE html>
+                <html lang="zh-CN">
+                <head>
+                  <meta charset="UTF-8">
+                  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                  <title>迷你RTS - 一小时游戏挑战</title>
+                  <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
+                  <link rel="stylesheet" href="style.css">
+                </head>
+                <body>
+                  <div id="game-container"></div>
+                  <script src="index.js"></script>
+                </body>
+                </html>
+                EOF
+              fi
+            fi
+            
+            echo "迷你RTS游戏构建完成"
+          else
+            echo "迷你RTS游戏目录不存在，跳过构建"
+          fi
+          
           # 未来将实现自动构建所有游戏的脚本
-          echo "游戏构建将在未来实现"
+          echo "所有游戏构建完成"
       
       - name: Upload artifact
-        uses: actions/upload-pages-artifact@v1
+        uses: actions/upload-pages-artifact@v3
         with:
           path: './dist'
 
@@ -55,4 +131,4 @@ jobs:
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v1 
+        uses: actions/deploy-pages@v4 
