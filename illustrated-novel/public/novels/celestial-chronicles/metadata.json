@@ -1,0 +1,36 @@
+{
+  "id": "celestial-chronicles",
+  "title": "天境编年史",
+  "author": "星辰梦境",
+  "coverImage": "/images/novels/celestial-chronicles/cover/main.jpg",
+  "description": "在一个融合科技与魔法的世界中，一位普通少年意外发现自己与远古预言息息相关，他的命运将与整个宇宙的存亡紧密相连。一段跨越星河的冒险就此展开。",
+  "chapterCount": 3,
+  "characters": [
+    {
+      "id": "lin-feng",
+      "name": "林风",
+      "image": "/images/novels/celestial-chronicles/characters/lin-feng.jpg",
+      "description": "18岁，普通高中生，拥有敏锐的感知力和坚定的信念。在一次意外中觉醒了与生俱来的星力。"
+    },
+    {
+      "id": "mei-ling",
+      "name": "梅玲",
+      "image": "/images/novels/celestial-chronicles/characters/mei-ling.jpg",
+      "description": "17岁，林风的青梅竹马，聪明机智，精通古老文字解读，对古代传说有着浓厚兴趣。"
+    },
+    {
+      "id": "professor-zhao",
+      "name": "赵教授",
+      "image": "/images/novels/celestial-chronicles/characters/professor-zhao.jpg",
+      "description": "55岁，考古学家，梅玲的导师，研究天境文明多年，掌握许多不为人知的秘密。"
+    },
+    {
+      "id": "dark-envoy",
+      "name": "暗影使者",
+      "image": "/images/novels/celestial-chronicles/characters/dark-envoy.jpg",
+      "description": "神秘组织「黑曜」的高级成员，追寻天境遗物多年，拥有强大的黑暗能量。"
+    }
+  ],
+  "tags": ["科幻", "奇幻", "冒险", "青春"],
+  "publication_date": "2023-05-15"
+} 

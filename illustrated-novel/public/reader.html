@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>阅读 - 插图小说</title>
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="stylesheet" href="/css/novel.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;700&display=swap">
+</head>
+<body>
+  <div class="novel-container">
+    <header class="novel-header">
+      <a href="/index.html" class="back-link">« 返回小说列表</a>
+      <h1 class="novel-title" id="novel-title">加载中...</h1>
+      <h2 class="novel-chapter" id="novel-chapter">第一章</h2>
+    </header>
+    
+    <main class="novel-content" id="novel-content">
+      <!-- 小说内容将通过JavaScript动态加载 -->
+      <div class="loading">加载中，请稍候...</div>
+    </main>
+    
+    <div class="chapter-navigation">
+      <button id="prev-chapter" class="nav-button">« 上一章</button>
+      <button id="next-chapter" class="nav-button">下一章 »</button>
+    </div>
+  </div>
+  
+  <script type="module" src="/js/reader.js"></script>
+</body>
+</html> 

@@ -1,0 +1,177 @@
+{
+  "id": 1,
+  "title": "第一章 - 星光的呼唤",
+  "content": [
+    {
+      "type": "image",
+      "src": "/images/novels/celestial-chronicles/scenes/cityscape.jpg",
+      "alt": "未来城市夜景",
+      "size": "image-large",
+      "layout": "image-full",
+      "caption": "2150年，新星城 - 一座融合古典与未来风格的奇妙都市"
+    },
+    {
+      "type": "text",
+      "content": "新星城的夜晚，总是灯火辉煌。摩天大楼上闪烁的霓虹灯与古老的红灯笼交相辉映，科技与传统在这座城市里达成了奇妙的和谐。"
+    },
+    {
+      "type": "text",
+      "content": "林风站在天台上，仰望着繁星点缀的夜空。今晚的星空格外清晰，仿佛每一颗星星都在向他诉说着什么。微风轻抚过他的脸庞，带来一丝凉意。"
+    },
+    {
+      "type": "character-card",
+      "name": "林风",
+      "image": "/images/novels/celestial-chronicles/characters/lin-feng.jpg",
+      "description": "18岁，普通高中生，拥有敏锐的感知力和坚定的信念。在一次意外中觉醒了与生俱来的星力。他身材修长，黑发微卷，总是带着若有所思的表情。"
+    },
+    {
+      "type": "text",
+      "content": "\"又在这里发呆啊？\"一个熟悉的声音从身后传来。林风回过头，看到梅玲正向他走来，手中拿着两罐饮料。"
+    },
+    {
+      "type": "image",
+      "src": "/images/novels/celestial-chronicles/characters/mei-ling.jpg",
+      "alt": "梅玲的形象",
+      "size": "image-medium",
+      "layout": "image-right",
+      "caption": "梅玲 - 聪明机智的考古学学徒"
+    },
+    {
+      "type": "text",
+      "content": "\"你知道我喜欢看星星。\"林风接过梅玲递来的饮料，微微一笑，\"今晚的星空特别美。\""
+    },
+    {
+      "type": "text",
+      "content": "梅玲仰头望向夜空，黑色的长发在微风中轻轻飘动。\"确实很美。但你最近总是盯着星星发呆，是有什么心事吗？\""
+    },
+    {
+      "type": "text",
+      "content": "林风摇摇头，犹豫了一下，还是开口道：\"我最近总是做同一个梦，梦见自己在星空中飞行，追逐着一道神秘的光芒。那光芒好像在呼唤我，但我却永远无法靠近。\""
+    },
+    {
+      "type": "text",
+      "content": "梅玲眼前一亮：\"这听起来像是赵教授研究的那些古老传说！你知道吗，古籍中记载了一个叫'天境'的文明，据说他们可以通过星光与宇宙沟通。\""
+    },
+    {
+      "type": "image-pair",
+      "images": [
+        {
+          "src": "/images/novels/celestial-chronicles/scenes/ancient-text.jpg",
+          "alt": "古老的天境文字"
+        },
+        {
+          "src": "/images/novels/celestial-chronicles/scenes/star-constellation.jpg",
+          "alt": "特殊的星座图"
+        }
+      ],
+      "caption": "古老的天境文字与对应的星座图"
+    },
+    {
+      "type": "text",
+      "content": "\"天境？\"林风感到一阵莫名的心悸，这个名字在他心中激起了奇怪的共鸣。"
+    },
+    {
+      "type": "text",
+      "content": "\"是的，赵教授收藏了很多关于天境的古籍。如果你感兴趣，明天我可以带你去见他。\""
+    },
+    {
+      "type": "text",
+      "content": "就在这时，天空中的星星突然变得更加明亮。一颗流星划过夜空，在两人惊讶的注视下，它并没有消失，而是在空中画出了一个奇异的符号，然后缓缓消散。"
+    },
+    {
+      "type": "image",
+      "src": "/images/novels/celestial-chronicles/scenes/meteor-symbol.jpg",
+      "alt": "流星划出的神秘符号",
+      "size": "image-medium",
+      "layout": "image-center",
+      "caption": "流星在夜空中留下的神秘符号"
+    },
+    {
+      "type": "text",
+      "content": "\"你看到了吗？\"林风惊讶地问道。"
+    },
+    {
+      "type": "text",
+      "content": "梅玲点点头，脸上写满了震惊：\"这不可能是巧合。林风，这个符号我在赵教授的古籍中见过！这是天境文明的'觉醒'符号！\""
+    },
+    {
+      "type": "text",
+      "content": "就在这时，林风感到一阵头晕目眩。他的视线突然变得模糊，耳边响起了奇怪的低语声，仿佛有无数人在同时向他诉说着什么。在他倒下的瞬间，他看到自己的手掌心开始发出淡淡的蓝光。"
+    },
+    {
+      "type": "image",
+      "src": "/images/novels/celestial-chronicles/scenes/awakening.jpg",
+      "alt": "林风手心发出的蓝光",
+      "size": "image-small",
+      "layout": "image-left",
+      "caption": "林风手心中神秘的蓝光"
+    },
+    {
+      "type": "text",
+      "content": "\"林风！林风！你怎么了？\"梅玲焦急的声音在他耳边回荡，但他已经无法回应。意识渐渐模糊之际，他仿佛看到了星空向他俯冲而来，无数星光汇聚在他的身体里。"
+    },
+    {
+      "type": "text",
+      "content": "在彻底失去意识前，他听到了一个古老而神秘的声音：\"被选中的孩子，星光已经呼唤你。天境的秘密，将由你来揭开。\""
+    },
+    {
+      "type": "image",
+      "src": "/images/novels/celestial-chronicles/scenes/dark-figure.jpg",
+      "alt": "远处监视的暗影使者",
+      "size": "image-medium",
+      "layout": "image-full",
+      "caption": "远处大楼的阴影中，一个神秘人物默默注视着这一切"
+    },
+    {
+      "type": "text",
+      "content": "在城市的另一端，一个身着黑色风衣的人影站在摩天大楼的顶端，通过高倍望远镜观察着林风和梅玲。他拿出通讯器，低声道：\"目标已经觉醒，符合所有预言中的特征。是否立即采取行动？\""
+    },
+    {
+      "type": "text",
+      "content": "通讯器那端传来一个沙哑的声音：\"继续监视，不要打草惊蛇。预言的棋局已经开始，我们需要等待最佳时机。\""
+    },
+    {
+      "type": "text",
+      "content": "黑衣人轻轻点头，收起了通讯器。他最后看了一眼已经昏迷的林风，嘴角露出一丝神秘的微笑：\"星光的选择者，你的命运已经注定。\""
+    },
+    {
+      "type": "image-grid",
+      "images": [
+        {
+          "src": "/images/novels/celestial-chronicles/scenes/artifact-1.jpg",
+          "alt": "天境遗物：星璃"
+        },
+        {
+          "src": "/images/novels/celestial-chronicles/scenes/artifact-2.jpg",
+          "alt": "天境遗物：命运罗盘"
+        },
+        {
+          "src": "/images/novels/celestial-chronicles/scenes/artifact-3.jpg",
+          "alt": "天境遗物：虚空之匙"
+        },
+        {
+          "src": "/images/novels/celestial-chronicles/scenes/artifact-4.jpg",
+          "alt": "天境遗物：时空卷轴"
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "content": "与此同时，在新星城郊外的一座古老实验室中，赵教授正在分析一组新发现的天境遗物。突然，所有遗物同时发出了微弱的蓝光，与林风手心的光芒遥相呼应。"
+    },
+    {
+      "type": "character-card",
+      "name": "赵教授",
+      "image": "/images/novels/celestial-chronicles/characters/professor-zhao.jpg",
+      "description": "55岁，考古学家，梅玲的导师，研究天境文明多年。白发苍苍但精神矍铄，眼神中透露着对未知的渴望和智慧的光芒。"
+    },
+    {
+      "type": "text",
+      "content": "赵教授眉头紧锁，翻开了一本古老的笔记：\"预言中提到的'星光唤醒'已经发生，这意味着'天境之门'即将开启。我们必须找到那个被星光选中的人，否则一切都将太迟...\""
+    },
+    {
+      "type": "text",
+      "content": "未完待续..."
+    }
+  ]
+} 

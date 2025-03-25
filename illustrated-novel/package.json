@@ -1,0 +1,15 @@
+{
+  "name": "illustrated-novel",
+  "version": "0.1.0",
+  "description": "插图小说展示平台",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "vite": "^5.0.0"
+  }
+} 

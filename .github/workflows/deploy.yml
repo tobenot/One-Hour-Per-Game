@@ -35,38 +35,35 @@ jobs:
         run: |
           # 创建dist目录
           mkdir -p dist
-          # 创建一个简单的主页
-          cat > dist/index.html << EOF
-          <!DOCTYPE html>
-          <html lang="zh-CN">
-          <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>One-Hour-Per-Game | 一小时游戏开发挑战</title>
-            <style>
-              body { font-family: 'Arial', sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
-              h1 { color: #333; }
-              .game-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; }
-              .game-card { border: 1px solid #ddd; border-radius: 8px; padding: 15px; transition: transform 0.3s; }
-              .game-card:hover { transform: translateY(-5px); box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
-              a { color: #0366d6; text-decoration: none; }
-            </style>
-          </head>
-          <body>
-            <h1>One-Hour-Per-Game | 一小时游戏开发挑战</h1>
-            <p>每个游戏都是在严格的60分钟时间限制下完成的，展示了现代AI工具在游戏开发中的潜力和应用。</p>
-            
-            <div class="game-list">
-              <div class="game-card">
-                <h2>迷你RTS</h2>
-                <p>一个简单的即时战略游戏，包含资源收集、建造和战斗系统。</p>
-                <a href="./mini-rts/">开始游戏</a>
-              </div>
-              <!-- 更多游戏将在这里添加 -->
-            </div>
-          </body>
-          </html>
-          EOF
+          
+          # 复制模板
+          cp landing-page-template.html dist/index.html
+          
+          # 生成游戏卡片HTML
+          GAME_CARDS=""
+          
+          # 迷你RTS游戏
+          if [ -d "mini-rts" ]; then
+            GAME_CARDS="${GAME_CARDS}
+            <div class=\"game-card\">
+              <h2>迷你RTS</h2>
+              <p>一个简单的即时战略游戏，包含资源收集、建造和战斗系统。</p>
+              <a href=\"./mini-rts/\">开始游戏</a>
+            </div>"
+          fi
+          
+          # 插图小说
+          if [ -d "illustrated-novel" ]; then
+            GAME_CARDS="${GAME_CARDS}
+            <div class=\"game-card\">
+              <h2>插图小说</h2>
+              <p>融合文字与图像的沉浸式小说体验，探索精彩的故事世界。</p>
+              <a href=\"./illustrated-novel/\">开始阅读</a>
+            </div>"
+          fi
+          
+          # 将游戏卡片插入到模板中
+          sed -i "s|<!-- GAME_CARDS_PLACEHOLDER -->|${GAME_CARDS}|g" dist/index.html
       
       - name: Build Games
         run: |
